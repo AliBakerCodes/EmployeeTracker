@@ -1,0 +1,12 @@
+INSERT INTO `employee`.`department` (`name`) VALUES ('Sales');
+INSERT INTO `employee`.`department` (`name`) VALUES ('Engineering');
+INSERT INTO `employee`.`department` (`name`) VALUES ('Finance');
+INSERT INTO `employee`.`department` (`name`) VALUES ('Legal');
+INSERT INTO `employee`.`role` (`title`, `salary`, `department_id`) VALUES ('Salesperson', '80000', '1');
+INSERT INTO `employee`.`role` (`title`, `salary`, `department_id`) VALUES ('Junior Dev', '65000', '2');
+INSERT INTO `employee`.`role` (`title`, `salary`, `department_id`) VALUES ('Account Manager', '150000', '3');
+INSERT INTO `employee`.`role` (`title`, `salary`, `department_id`) VALUES ('Paralegal', '45000', '4');
+INSERT INTO `employee`.`employee` (`first_name`, `last_name`, `role_id`) VALUES ('Jim', 'Beam', '1');
+INSERT INTO `employee`.`employee` (`first_name`, `last_name`, `role_id`) VALUES ('Jack', 'Daniels', '2');
+INSERT INTO `employee`.`employee` (`first_name`, `last_name`, `role_id`, `manager_id`) VALUES ('Evan', 'Williams', '3', '1');
+INSERT INTO `employee`.`employee` (`first_name`, `last_name`, `role_id`) VALUES ('Shirley', 'Temple', '4');

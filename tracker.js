@@ -1,13 +1,26 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const mysql = require('mysql2');
+// const { allDepts, allRoles, allEmployees } =require('./sqls');
 
+const allDepts = 'SELECT * FROM department';
+const allRoles = 'SELECT * FROM role';
+const allEmployees = `SELECT e.id, e.first_name as "First Name", e.last_name as "LAST NAME", r.title as "Title", d.name as 'DEPT', r.salary as "Salary", concat_ws(" ", m.first_name, m.last_name) as "Manager Name"
+FROM employee e
+join role r on e.role_id = r.id
+left outer join (SELECT 
+id, first_name, last_name, manager_id 
+		from employee 
+        where manager_id is not null) as m
+		on e.id = m.manager_id
+join department d on d.id = r.department_id` 
 
     init = () => {
-        whatDo();
+        mainMenu();
     }
 
-function whatDo() {
+function mainMenu() {
+    console.clear();
     inquirer.prompt(
       [
           {
@@ -16,49 +29,42 @@ function whatDo() {
             message: 'What would you like to do?',
             choices: [
                 {   
-                    key: '1',
+                  
                     name:'(1) View All Departments',
                     value: 1
                 },
                 {
-                    key: 2,
-                    name:'(2)View All Roles', 
-                    value: '2'
+                  
+                    name:'(2) View All Roles', 
+                    value: 2
                 },  
                 {   
-                    key: 3,
+                  
                     name:'(3) View All Employees',
-                    value: '3'
+                    value: 3
                 },  
                 {
-                    key: 4,
-                    name:'(4) View All Roles', 
-                    value: '4'
-                },
-                {
-                    key: 5,
+                 
                     name:'(5) Add a Department',
-                    value: '5'
+                    value: 4
                 },  
                 {
-                    key: 6,
+                 
                     name:'(6) Add a role',
-                    value: '6'
+                    value: 5
                 },
                 {
-                    key: 7,
+                 
                     name:'(7) Add an employee',
-                    value: '7'
+                    value: 6
                 },
                 {
-                    key: 8,
                     name:'(8) Update an employee role',
-                    value: '8'
+                    value: 7
                 },
                 {
-                    key: 9,
-                    name:'(0) Exit',
-                    value: 9
+                    name:'(8) Exit',
+                    value: 8
                 },
                 
             ],
@@ -66,12 +72,19 @@ function whatDo() {
       ]
   ).then((answers) => {
       const { doWhat } = answers;
+      console.clear();
         switch (doWhat){
             case 9:
                 process.exit();
                 break;
             case 1: 
-                allDepts();
+                sendDB(allDepts);
+                break;
+            case 2: 
+            sendDB(allRoles);
+                break;
+            case 3: 
+            sendDB(allEmployees);
                 break;
             default:
                 break;
@@ -102,21 +115,22 @@ const db = mysql.createConnection(
                 default: true,
               },
         ]).then((asnswers) => {
-            whatDo();
+            mainMenu();
         });
 
 };
 
-  function allDepts() {
-    db.query(`Select * FROM department`, (err, result) => {
-        if (err) {
-          console.log(err);
-        }
-        console.table(result);
-        goBack();
-      });
-      
+function sendDB(statement, arg1, arg2) {
+db.query(statement,[arg1,arg2], (err, result) => {
+    if (err) {
+        console.log(err);
+    }
+    console.table(result);
+    goBack();
+    });
+}
 
-  }
-  
+
+
+
 init();

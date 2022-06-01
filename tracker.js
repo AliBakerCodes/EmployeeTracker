@@ -1,19 +1,10 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const mysql = require('mysql2');
+const { async } = require('rxjs');
 // const { allDepts, allRoles, allEmployees } =require('./sqls');
 
-const allDepts = 'SELECT * FROM department';
-const allRoles = 'SELECT * FROM role';
-const allEmployees = `SELECT e.id, e.first_name as "First Name", e.last_name as "LAST NAME", r.title as "Title", d.name as 'DEPT', r.salary as "Salary", concat_ws(" ", m.first_name, m.last_name) as "Manager Name"
-FROM employee e
-join role r on e.role_id = r.id
-left outer join (SELECT 
-id, first_name, last_name, manager_id 
-		from employee 
-        where manager_id is not null) as m
-		on e.id = m.manager_id
-join department d on d.id = r.department_id` 
+
 
     init = () => {
         mainMenu();
@@ -24,46 +15,46 @@ function mainMenu() {
     inquirer.prompt(
       [
           {
-              type: 'list',
+              type: 'rawlist',
               name: 'doWhat',
             message: 'What would you like to do?',
             choices: [
                 {   
                   
-                    name:'(1) View All Departments',
+                    name:'View All Departments',
                     value: 1
                 },
                 {
                   
-                    name:'(2) View All Roles', 
+                    name:'View All Roles', 
                     value: 2
                 },  
                 {   
                   
-                    name:'(3) View All Employees',
+                    name:'View All Employees',
                     value: 3
                 },  
                 {
                  
-                    name:'(5) Add a Department',
+                    name:'Add a Department',
                     value: 4
                 },  
                 {
                  
-                    name:'(6) Add a role',
+                    name:'Add a role',
                     value: 5
                 },
                 {
                  
-                    name:'(7) Add an employee',
+                    name:'Add an employee',
                     value: 6
                 },
                 {
-                    name:'(8) Update an employee role',
+                    name:'Update an employee role',
                     value: 7
                 },
                 {
-                    name:'(8) Exit',
+                    name:'Exit',
                     value: 8
                 },
                 
@@ -81,10 +72,16 @@ function mainMenu() {
                 sendDB(allDepts);
                 break;
             case 2: 
-            sendDB(allRoles);
+                sendDB(allRoles);
                 break;
             case 3: 
-            sendDB(allEmployees);
+                sendDB(allEmployees);
+                break;
+            case 4: 
+                deptAdd();
+                break;
+            case 5: 
+                roleAdd();
                 break;
             default:
                 break;
@@ -92,7 +89,7 @@ function mainMenu() {
   })
 };
 
-const db = mysql.createConnection(
+const db = mysql.createConnection( 
     {
       host: 'localhost',
       // MySQL username,
@@ -120,17 +117,71 @@ const db = mysql.createConnection(
 
 };
 
-function sendDB(statement, arg1, arg2) {
-db.query(statement,[arg1,arg2], (err, result) => {
+function sendDB(statement, arg1, arg2, arg3, arg4) {
+db.query(statement,[arg1,arg2,arg3,arg4], (err, result) => {
     if (err) {
         console.log(err);
-    }
+    }; 
+    if (statement.includes('SELECT')){
     console.table(result);
+    }; 
     goBack();
     });
 }
 
+async function viewData(sql) {
+    try {
+      return await db.promise().query(sql);
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
+function deptAdd () {
+    console.clear();
+    inquirer.prompt(
+      [
+          {
+              type: 'input',
+              name: 'dept_name',
+            message: 'What is the new department name?',
+          }
+      ]
+).then(answers => {
+    sendDB(addDept, answers.dept_name);
+    console.log("DB Updated");
+});
+}
 
+async function roleAdd () {
+    console.clear();
+    let deptArry =[];
+    const depts= await viewData(allDepts)
+    console.log(depts);
+    inquirer.prompt(
+      [
+          {
+              type: 'input',
+              name: 'role_name',
+            message: 'What is the new role name?',
+          },
+          {
+            type: 'input',
+            name: 'role_salary',
+          message: 'What is the new role salary?',
+        },
+        {
+            type: 'list',
+            name: 'dept_name',
+          message: 'What is the new department name?',
+          choices: depts[0].map((item) => item.name),
+        },
+      ]
+).then(answers => {
+    
+    sendDB(addRole, answers.role_name, answers.role_salary, answers.dept_name.id);
+    console.log("DB Updated");
+});
+}
 
 init();

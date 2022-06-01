@@ -1,7 +1,15 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const mysql = require('mysql2');
-const { async } = require('rxjs');
+const {
+    db,
+    ALL_DEPTS,
+    ALL_ROLES,
+    ALL_EMPLOYEES,
+    ADD_DEPT,
+    ADD_ROLE
+  } = require('./connection/connection');
+// const { async } = require('rxjs');
 // const { allDepts, allRoles, allEmployees } =require('./sqls');
 
 
@@ -10,9 +18,9 @@ const { async } = require('rxjs');
         mainMenu();
     }
 
-function mainMenu() {
+async function mainMenu() {
     console.clear();
-    inquirer.prompt(
+    await inquirer.prompt(
       [
           {
               type: 'rawlist',
@@ -69,13 +77,13 @@ function mainMenu() {
                 process.exit();
                 break;
             case 1: 
-                sendDB(allDepts);
+                sendDB(ALL_DEPTS);
                 break;
             case 2: 
-                sendDB(allRoles);
+                sendDB(ALL_ROLES);
                 break;
             case 3: 
-                sendDB(allEmployees);
+                sendDB(ALL_EMPLOYEES);
                 break;
             case 4: 
                 deptAdd();
@@ -89,17 +97,7 @@ function mainMenu() {
   })
 };
 
-const db = mysql.createConnection( 
-    {
-      host: 'localhost',
-      // MySQL username,
-      user: 'root',
-      // MySQL password
-      password: 'password123!',
-      database: 'employee'
-    },
-    console.log(`Connected to the employee database.`)
-  );
+
 
   function goBack() {
     console.log('-----------------------')
@@ -117,25 +115,30 @@ const db = mysql.createConnection(
 
 };
 
-function sendDB(statement, arg1, arg2, arg3, arg4) {
-db.query(statement,[arg1,arg2,arg3,arg4], (err, result) => {
-    if (err) {
-        console.log(err);
-    }; 
-    if (statement.includes('SELECT')){
-    console.table(result);
-    }; 
+async function sendDB(sql, arg1,arg2,arg3) {
+    const result = await db.promise().query(sql,arg1,arg2,arg3);
+    if(sql.includes('SELECT')){
+    console.log(cTable.getTable(result[0]));
+    }
     goBack();
-    });
+    
 }
 
-async function viewData(sql) {
+async function selectDb(sql) {
     try {
       return await db.promise().query(sql);
     } catch (err) {
       console.log(err);
     }
   }
+
+async function insertDB(table, values) {
+    try {
+        return await db.promise().query(sql, values);
+      } catch (err) {
+        console.log(err);
+      }
+}
 
 function deptAdd () {
     console.clear();
@@ -148,14 +151,13 @@ function deptAdd () {
           }
       ]
 ).then(answers => {
-    sendDB(addDept, answers.dept_name);
-    console.log("DB Updated");
+    sendDB(ADD_DEPT, answers.dept_name);
+    console.log(`Added ${answers.dept_name} to Database`);
 });
 }
 
 async function roleAdd () {
     console.clear();
-    let deptArry =[];
     const depts= await viewData(allDepts)
     console.log(depts);
     inquirer.prompt(
@@ -179,7 +181,8 @@ async function roleAdd () {
       ]
 ).then(answers => {
     
-    sendDB(addRole, answers.role_name, answers.role_salary, answers.dept_name.id);
+    sendDB(ADD_DEPT, answers.role_name, answers.role_salary, answers.dept_name.id);
+    sendDB(ALL_DEPTS)
     console.log("DB Updated");
 });
 }

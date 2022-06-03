@@ -23,15 +23,25 @@ id, first_name, last_name, manager_id
         where manager_id is not null) as m
 		on e.id = m.manager_id
 join department d on d.id = r.department_id;`;
+const ALL_EMPLOYEES2= `SELECT CONCAT_WS(" ", first_name, last_name) AS name FROM employee`
+const ALL_MANAGERS='SELECT concat_ws(" ", first_name, last_name) AS name FROM employee WHERE manager_id IS NOT NULL;'
+const ONE_MANAGER='SELECT manager_id FROM employee WHERE CONCAT_WS(" ", first_name, last_name) = ? LIMIT 1;'
+const ONE_DEPT = "SELECT id FROM department WHERE name = ? LIMIT 1"
+const ONE_ROLE = "SELECT id FROM role WHERE title = ? LIMIT 1"
 const ADD_DEPT = "INSERT INTO department (`name`) VALUES (?);";
 const ADD_ROLE =
-  "INSERT INTO role (`title`, `salary`, `department_id`) VALUES (?, ?, ?);";
+  "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?);";
 
   module.exports= {
     db,
     ALL_DEPTS,
     ALL_ROLES,
     ALL_EMPLOYEES,
+    ALL_EMPLOYEES2,
     ADD_DEPT,
-    ADD_ROLE
+    ADD_ROLE,
+    ONE_DEPT,
+    ALL_MANAGERS,
+    ONE_MANAGER,
+    ONE_ROLE,
   }

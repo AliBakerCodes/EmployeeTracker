@@ -6,8 +6,13 @@ const {
     ALL_DEPTS,
     ALL_ROLES,
     ALL_EMPLOYEES,
+    ALL_EMPLOYEES2,
     ADD_DEPT,
-    ADD_ROLE
+    ADD_ROLE,
+    ONE_DEPT,
+    ALL_MANAGERS,
+    ONE_MANAGER,
+    ONE_ROLE,
   } = require('./connection/connection');
 // const { async } = require('rxjs');
 // const { allDepts, allRoles, allEmployees } =require('./sqls');
@@ -91,6 +96,15 @@ async function mainMenu() {
             case 5: 
                 roleAdd();
                 break;
+            case 6:
+                employeeAdd()
+                break;
+            case 7:
+                updateRole()
+                break;
+            case 8:
+                process.exit()
+                break;
             default:
                 break;
       }
@@ -99,9 +113,9 @@ async function mainMenu() {
 
 
 
-  function goBack() {
+  async function goBack() {
     console.log('-----------------------')
-    inquirer.prompt(
+    await inquirer.prompt(
         [
             {
                 type: 'confirm',
@@ -124,9 +138,9 @@ async function sendDB(sql, arg1,arg2,arg3) {
     
 }
 
-async function selectDb(sql) {
+async function selectDb(sql, arg1) {
     try {
-      return await db.promise().query(sql);
+      return await db.promise().query(sql, arg1);
     } catch (err) {
       console.log(err);
     }
@@ -140,9 +154,9 @@ async function insertDB(table, values) {
       }
 }
 
-function deptAdd () {
+async function deptAdd () {
     console.clear();
-    inquirer.prompt(
+    await inquirer.prompt(
       [
           {
               type: 'input',
@@ -150,17 +164,16 @@ function deptAdd () {
             message: 'What is the new department name?',
           }
       ]
-).then(answers => {
-    sendDB(ADD_DEPT, answers.dept_name);
+).then(async answers => {
+    await sendDB(ADD_DEPT, answers.dept_name);
     console.log(`Added ${answers.dept_name} to Database`);
 });
 }
 
 async function roleAdd () {
     console.clear();
-    const depts= await viewData(allDepts)
-    console.log(depts);
-    inquirer.prompt(
+    const depts= await selectDb(ALL_DEPTS)
+    await inquirer.prompt(
       [
           {
               type: 'input',
@@ -179,11 +192,80 @@ async function roleAdd () {
           choices: depts[0].map((item) => item.name),
         },
       ]
-).then(answers => {
-    
-    sendDB(ADD_DEPT, answers.role_name, answers.role_salary, answers.dept_name.id);
-    sendDB(ALL_DEPTS)
-    console.log("DB Updated");
+).then(async answers => {
+    const dept_id = await selectDb(ONE_DEPT, answers.dept_name) 
+    await sendDB(`INSERT INTO role (title, salary, department_id) VALUES ("${answers.role_name}", ${answers.role_salary}, ${dept_id[0][0].id});`);
+    console.log("\nRole Added to Database\n");
+    await sendDB(ALL_ROLES);
+});
+}
+
+async function employeeAdd () {
+    console.clear();
+    const managers= await selectDb(ALL_MANAGERS)
+    const roles= await selectDb(ALL_ROLES)
+    await inquirer.prompt(
+      [
+          {
+              type: 'input',
+              name: 'first_name',
+            message: "What is the new employee's first name?",
+          },
+          {
+            type: 'input',
+              name: 'last_name',
+            message: "What is the new employee's last name?",
+        },
+        {
+            type: 'list',
+            name: 'role_name',
+          messsage: "What is the new employees's role?",
+          choices: roles[0].map((item) => item.title),
+        },
+        {
+            type: 'list',
+            name: 'manager_name',
+          message: "Who is the new employee's manager?",
+          choices: managers[0].map((item) => item.name),
+        },
+      ]
+).then(async answers => {
+    const role_id = await selectDb(ONE_ROLE, answers.role_name) 
+    const managerQry = await selectDb(ONE_MANAGER, answers.manager_name)
+    const manager_id = managerQry[0].map((item) => item.manager_id);
+    console.log(manager_id[0])
+    await sendDB(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${answers.first_name}", "${answers.last_name}", ${role_id[0][0].id}, ${manager_id});`);
+    console.log("\nRole Added to Database\n");
+    await sendDB(ALL_EMPLOYEES);
+});
+}
+
+async function updateRole () {
+  console.clear();
+  // const managers= await selectDb(ALL_MANAGERS)
+  const employees= await selectDb(ALL_EMPLOYEES2)
+  const roles= await selectDb(ALL_ROLES)
+  console.clear();
+  await inquirer.prompt(
+    [
+      {
+        type: 'list',
+        name: 'employee_name',
+      message: "Which employee to update?",
+      choices: employees[0].map((item) => item.name),
+    },
+      {
+          type: 'list',
+          name: 'role_name',
+        messsage: "What is the new role?",
+        choices: roles[0].map((item) => item.title),
+      },
+    ]
+).then(async answers => {
+  const role_id = await selectDb(ONE_ROLE, answers.role_name) 
+  await sendDB(`UPDATE employee SET role_id = ${role_id[0][0].id} WHERE CONCAT_WS(" ", first_name, last_name) = "${answers.employee_name}";`);
+  console.log("\nRole Added to Database\n");
+  await sendDB(ALL_EMPLOYEES);
 });
 }
 
